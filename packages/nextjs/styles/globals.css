@@ -30,3 +30,82 @@ p {
 .btn.btn-ghost {
   @apply shadow-none;
 }
+
+/* This move the card on Y on hover */
+/* 
+.nft-card {
+  transition: all 0.3s ease-in-out;
+}
+
+.nft-card:hover {
+  transform: translateY(-10px);
+} */
+
+
+/* This flips the card left to right */
+/* 
+.nft-card {
+  perspective: 1000px;
+  transition: transform 0.5s;
+}
+
+.nft-card:hover {
+  transform: rotateY(180deg);
+} */
+
+
+/* This give a 3d flip top to down */
+/* .nft-card {
+  transform-style: preserve-3d;
+  transition: transform 0.5s;
+}
+
+.nft-card:hover {
+  transform: rotateX(180deg);
+} */
+
+/* This is a scroll effect */
+.nft-card {
+  background-position: center;
+  transition: background-position 2s;
+}
+
+.nft-card:hover {
+  background-position: center 50%;
+}
+
+/* This zooms in the img */
+.nft-card img {
+  transition: transform 0.2s;
+}
+
+.nft-card:hover img {
+  transform: scale(1.1);
+}
+
+/* Hero */
+.hero-container {
+  position: relative;
+  height: 400px;
+  background-color: #f7fafc;
+}
+
+.hero-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  animation: fadeIn 1s ease-in-out forwards;
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -55%);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
