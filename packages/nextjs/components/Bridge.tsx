@@ -1,115 +1,160 @@
 import { useState } from "react";
+import { config } from "./config";
 import * as optimismSDK from "@eth-optimism/sdk";
-import { ethers } from "ethers";
+import { motion } from "framer-motion";
+import { toast } from "react-hot-toast";
 import { useAccount, useNetwork } from "wagmi";
 
-const Bridge = () => {
-  const [bridgeTxHash, setBridgeTxHash] = useState("");
+interface BridgeProps {
+  nftPrice: number;
+}
+
+const gwei = BigInt(1e9);
+// const eth: bigint = gwei * gwei;   // 10^18
+// const centieth = eth / BigInt(100);
+
+const Bridge = (props: BridgeProps) => {
+  const { nftPrice } = props;
+  const amount = BigInt(nftPrice) * gwei;
+  const [bridgeTxHash, setBridgeTxHash] = useState<string>("");
+  const [bridgingInProgress, setBridgingInProgress] = useState<boolean>(false);
+  const [bridgingSuccess, setBridgingSuccess] = useState<boolean>(false);
+  const [bridgingStatus, setBridgingStatus] = useState<string>("");
+  const [bridgingProgress, setBridgingProgress] = useState<number>(0);
+  const [bridgingTimeTaken, setBridgingTimeTaken] = useState<number>();
   const { chain } = useNetwork();
   const { address } = useAccount();
   // const { data: signer } = useSigner();
-  const [amount, setAmount] = useState(0);
 
-  const handleBridging = async (amount: number) => {
+  const handleBridging = async () => {
+    const { crossChainMessenger } = config(chain, address);
     const start = new Date();
-
     try {
-      const l1Url = `https://${chain}-goerli.g.alchemy.com/v2/${process.env.GOERLI_ALCHEMY_KEY}`;
-      const l2Url = `https://opt-${chain}-goerli.g.alchemy.com/v2/${process.env.OPTIMISM_GOERLI_ALCHEMY_KEY}`;
+      setBridgingInProgress(true);
 
-      const l1RpcProvider = new ethers.providers.JsonRpcProvider(l1Url);
-      const l2RpcProvider = new ethers.providers.JsonRpcProvider(l2Url);
+      if (chain?.id === 5) {
+        setBridgingStatus("Depositing asset on Ethereum...");
 
-      const l1Wallet = l1RpcProvider.getSigner(address);
-      const l2Wallet = l2RpcProvider.getSigner(address);
-
-      const crossChainMessenger = new optimismSDK.CrossChainMessenger({
-        l1ChainId: chain?.name === "mainnet" ? 1 : 5,
-        l2ChainId: chain?.name === "mainnet" ? 10 : 420,
-        l1SignerOrProvider: l1Wallet,
-        l2SignerOrProvider: l2Wallet,
-        bedrock: true,
-      });
-
-      if (chain?.name === "mainnet") {
-        // user is connected to Ethereum, deposit the asset
-        const response = await crossChainMessenger.depositETH(amount);
+        setBridgingProgress(20);
+        const response = await crossChainMessenger.depositETH(Number(amount));
         setBridgeTxHash(response.hash);
-        console.log(`Transaction hash (on L1): ${response.hash}`);
+
+        setBridgingStatus("Waiting for transaction to be confirmed on Ethereum...");
         await response.wait();
-        console.log("Waiting for status to change to RELAYED");
+        setBridgingProgress(50);
+
+        setBridgingStatus("Waiting for transaction to be relayed to Optimism...");
+        setBridgingProgress(80);
         await crossChainMessenger.waitForMessageStatus(response.hash, optimismSDK.MessageStatus.RELAYED);
+        setBridgingProgress(100);
         console.log(`depositETH took ${(new Date().getTime() - start.getTime()) / 1000} seconds\n\n`);
-      } else if (chain?.name === "optimism") {
-        // user is connected to Optimism, withdraw the asset
-        const response = await crossChainMessenger.withdrawETH(amount);
+
+        setBridgingStatus("Bridging successful!");
+        setBridgingSuccess(true);
+      } else if (chain?.id === 420) {
+        setBridgingProgress(20);
+        setBridgingStatus("Withdrawing asset from Optimism...");
+
+        const response = await crossChainMessenger.withdrawETH(Number(amount));
         setBridgeTxHash(response.hash);
-        console.log(`Transaction hash (on L2): ${response.hash}`);
-        console.log(`\tFor more information: https://${chain}-optimism.etherscan.io/tx/${response.hash}`);
+        setBridgingProgress(50);
+
+        setBridgingStatus("Waiting for transaction to be confirmed on Optimism...");
         await response.wait();
-        console.log("Waiting for status to be READY_TO_PROVE");
-        await crossChainMessenger.waitForMessageStatus(response.hash, optimismSDK.MessageStatus.READY_TO_PROVE);
+        setBridgingProgress(70);
+
+        setBridgingStatus("Proving message on Ethereum...");
         await crossChainMessenger.proveMessage(response.hash);
-        console.log("In the challenge period, waiting for status READY_FOR_RELAY");
+
+        setBridgingStatus("Waiting for message to be relayed to Optimism...");
         await crossChainMessenger.waitForMessageStatus(response.hash, optimismSDK.MessageStatus.READY_FOR_RELAY);
-        console.log("Ready for relay, finalizing message now");
+        setBridgingProgress(90);
+
+        setBridgingStatus("Finalizing message on Optimism...");
         await crossChainMessenger.finalizeMessage(response.hash);
-        console.log("Waiting for status to change to RELAYED");
-        await crossChainMessenger.waitForMessageStatus(response.hash, optimismSDK.MessageStatus.RELAYED);
-        console.log(`withdrawETH took ${(new Date().getTime() - start.getTime()) / 1000} seconds\n\n\n`);
-      } else {
-        console.log("Invalid network selected!");
+        const end = new Date();
+        setBridgingProgress(100);
+        console.log(`withdrawETH took ${(new Date().getTime() - start.getTime()) / 1000} seconds\n\n`);
+        // Capture gas used and time taken after bridging completes
+        const timeTaken = (end.getTime() - start.getTime()) / 1000;
+        setBridgingTimeTaken(timeTaken);
+
+        setBridgingStatus("Bridging successful!");
+        setBridgingSuccess(true);
       }
     } catch (error) {
       console.error(error);
+      toast.error("An error occurred while bridging.");
+    } finally {
+      setBridgingInProgress(false);
     }
   };
 
-  const handleAmountChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setAmount(parseFloat(event.target.value));
-  };
-
   return (
-    <div className="bg-gray-200 p-4 rounded-lg">
-      <h2 className="text-lg font-bold mb-4">Bridge ETH</h2>
-      <div className="flex mb-4">
-        <input
-          type="number"
-          className="w-full border border-gray-400 p-2 mr-2 rounded-lg"
-          value={amount}
-          onChange={handleAmountChange}
-        />
-        <button
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200"
-          onClick={() => handleBridging(amount)}
+    <div className="flex flex-col items-center justify-center">
+      <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
+        <motion.div
+          initial={{ y: "-100vh" }}
+          animate={{ y: "0" }}
+          className="relative z-50 px-8 py-6 bg-white rounded-lg shadow-lg"
         >
-          Bridge
-        </button>
+          <h2 className="mb-4 font-bold text-xl text-gray-800">Bridge</h2>
+          <button
+            className="px-4 py-2 font-bold text-white bg-blue-500 rounded-md shadow-lg focus:outline-none hover:bg-blue-600 active:bg-blue-700"
+            onClick={() => handleBridging()}
+          >
+            Bridge
+          </button>
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${bridgingProgress}%` }}
+            style={{ height: 10, backgroundColor: "blue" }}
+            className="mb-4 rounded-full"
+          />
+        </motion.div>
       </div>
-      {bridgeTxHash && (
-        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-2 rounded-lg mb-4">
-          Bridge transaction submitted, hash: {bridgeTxHash}
+
+      {bridgingInProgress && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
+          <motion.div
+            initial={{ y: "-100vh" }}
+            animate={{ y: "0" }}
+            className="relative z-50 px-8 py-6 bg-white rounded-lg shadow-lg"
+          >
+            <h2 className="mb-4 font-bold text-xl text-gray-800">Bridging in progress</h2>
+            <p className="mb-4 text-gray-700">Status: {bridgingStatus}</p>
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${bridgingProgress}%` }}
+              style={{ height: 10, backgroundColor: "blue" }}
+              className="mb-4 rounded-full"
+            />
+          </motion.div>
         </div>
       )}
-      <button
-        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200"
-        data-modal="#myModal"
-      >
-        Show Modal
-      </button>
-      <div className="modal" id="myModal">
-        <div className="modal__overlay"></div>
-        <div className="modal__content p-4 rounded-lg bg-white">
-          <h2 className="text-lg font-bold mb-4">Modal Title</h2>
-          <p className="mb-4">Modal content goes here</p>
-          <button
-            className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors duration-200"
-            data-modal-close
+      {/* Success modal */}
+      {bridgingSuccess && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
+          <motion.div
+            initial={{ y: "-100vh" }}
+            animate={{ y: "0" }}
+            className="relative z-50 px-8 py-6 bg-white rounded-lg shadow-lg"
           >
-            Close
-          </button>
+            <h2 className="mb-4 font-bold text-xl text-gray-800">Bridging successful</h2>
+            <p className="mb-4 text-gray-700">Message hash: {bridgeTxHash}</p>
+            <p className="mb-4 text-gray-700">Time taken: {bridgingTimeTaken} seconds</p>
+            <button
+              className="px-4 py-2 font-bold text-white bg-green-500 rounded-md shadow-lg focus:outline-none hover:bg-green-600 active:bg-green-700"
+              onClick={() => setBridgingSuccess(false)}
+            >
+              Close
+            </button>
+          </motion.div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: MIT
-pragma solidity >=0.8.0 <0.9.0;
+pragma solidity ^0.8.15;
 
 
 // Importing required contracts and libraries from OpenZeppelin
@@ -21,117 +21,140 @@ contract Cross is ERC721URIStorage, Ownable, Pausable {
     // Tracks the number of tokens minted
     Counters.Counter private _tokenIds;
 
-    // Maps token IDs to bridge values
-    mapping (uint256 => uint256) private _bridgeValues;
-
-    // Maps token IDs to rarity values
-    mapping (uint256 => uint8) private _rarityValues;
-
-    // Maps rarity values to token supply
-    mapping (uint8 => uint256) private _raritySupply;
-
-    // Array of rarity thresholds
-    uint8[] private _rarityThresholds;
+    // The bridge fee
+    uint256 private _bridgeFee;
 
     // The base URI for token metadata
-    string private immutable _baseTokenURI;
+    string private _baseTokenURI; // "https://gateway.pinata.cloud/ipfs/";
 
-    // The maximum token supply for rare NFTs
-    uint256 private immutable _maxSupply;
+    // The total value of bridges crossed by each address
+    mapping (address => uint256) private _totalBridgeValue;
 
-    // The minimum bridge value for fee exemption
-    uint256 private immutable _feeThreshold;
+    // Token struct
+    struct Token {
+        uint256 bridgeValue;
+        uint8 rarity;
+        string uri;
+    }
+        
+    // Mapping of token IDs to their Token struct
+    mapping (uint256 => Token) private _tokens;
+
+
+    // stuct of rarity threshold and corresponding supply
+    struct Rarity {
+        string _rarity; // Classic, Epic, Legend, Ultimate... etc
+        uint8 _rarityThreshold; // 0.05 ether, 0.1 ether, 0.5 ether, 1 ether.. etc
+        uint256 _raritySupply; // 10000000, 100000, 10000, 1000
+        uint256 _maxSupply; // running supply
+    }
+
+    // The rarity thresholds and corresponding supplies
+    Rarity[] private _rarities;
 
     // Event that is emitted when a token is minted
-    event TokenMinted(address indexed owner, uint256 indexed tokenId, uint256 bridgeValue, uint8 rarityValue);
+    event TokenMinted(address indexed owner, uint256 indexed tokenId, uint256 bridgeValue, uint8 rarityName);
 
     // Event that is emitted when a token is burned
-
+    event TokenBurned(uint256 indexed tokenId);
 
     
     /**
     * @dev Constructor for Cross contract.
-    * @param name The name of the NFT.
-    * @param symbol The symbol of the NFT.
     * @param baseTokenURI The base URI for token metadata.
-    * @param maxSupply The maximum token supply for rare NFTs.
-    * @param feeThreshold The minimum bridge value for fee exemption.
-    * @param feeExemptionRarity The rarity value of fee-exempt NFTs.
     * @param bridgeFee The fee charged for bridging.
     */
     constructor(
-        string memory name,
-        string memory symbol,
         string memory baseTokenURI,
-        uint256 maxSupply,
-        uint256 feeThreshold,
-        uint256 feeExemptionRarity,
         uint256 bridgeFee
-    ) ERC721(name, symbol) {
+    ) ERC721("Cross", "CROSS") {
         _baseTokenURI = baseTokenURI;
-        _maxSupply = maxSupply;
-        _feeThreshold = feeThreshold;
-        _feeExemptionRarity = feeExemptionRarity;
         _bridgeFee = bridgeFee;
+
+       // Initialize rarity thresholds
+        _rarities.push(Rarity("Classic", 1, 10000000));
+        _rarities.push(Rarity("Epic", 2, 100000));
+        _rarities.push(Rarity("Legend", 3, 10000));
+        _rarities.push(Rarity("Ultimate", 4, 1000)); 
+        _rarities.push(Rarity("Crosset", 5, 100)); 
     }
     
     /**
     * @dev Mint a new NFT.
     * @param to_ The address to mint the new NFT to.
     * @param bridgeValue_ The bridge value of the NFT.
+    * @param uri The token metadata URI.
     * @return newItemId The ID of the newly minted NFT.
     */
-    function mint(address to_, uint256 bridgeValue_) public payable whenNotPaused returns (uint256 newItemId) {
-    // Require bridge value to be greater than or equal to the bridge fee
-    require(bridgeValue_ >= _bridgeFee, "Cross: bridge value must be greater than fee");
+    function mint(uint256 bridgeValue_, string memory uri) public payable whenNotPaused returns (uint256 newItemId) {
     // Require payment of bridge fee
     require(msg.value >= _bridgeFee, "Cross: insufficient fee amount");
-    // Require maximum token supply not to be reached
-    require(_tokenIds.current() < _maxSupply, "Cross: maximum token supply reached");
+
+    
+    uint8 rarity = 0;
+    // determine the rarity of the token to be minted for the bridgeValue
+    for (uint8 i = 0; i < _rarities.length; i++) {
+        if (bridgeValue_ >= _rarities[i]._rarityThreshold * 1 ether) {
+            rarity = i + 1;
+            break;
+        }
+    }
+    // Require maximum token supply for the rarity of the token not to be reached
+    require(_rarities[rarity - 1]._maxSupply < _rarities[rarity - 1]._raritySupply, "Cross: maximum token supply for this rarity has been reached");
+
+    // Update maximum token supply for the rarity of the token
+    _rarities[rarity - 1]._maxSupply++;
+
+    // Update senders total bridged tokens
+    _totalBridgeValue[msg.sender] += bridgeValue_;
 
     // Increment token ID
     _tokenIds.increment();
-    uint256 newItemId = _tokenIds.current();
+    newItemId = _tokenIds.current();
 
-    // Set token URI
-    _setTokenURI(newItemId, string(abi.encodePacked(_baseTokenURI, newItemId.toString())));
+    // Set token properties
+    _tokens[newItemId] = Token(bridgeValue_, rarity, uri);
 
-    // Set bridge value
-    _bridgeValue[newItemId] = bridgeValue_;
-
-    // Determine rarity
-    uint256 rarity;
-    if (bridgeValue_ >= _feeThreshold) {
-        rarity = _feeExemptionRarity;
-        _feeExemptionSupply++;
-    } else {
-        rarity = 1;
-    }
-    _rarity[newItemId] = rarity;
-    _supply[rarity]++;
+    // Emit token minted event
+    emit TokenMinted(msg.sender, newItemId, bridgeValue_, rarity);
 
     // Mint token to recipient
-    _mint(to_, newItemId);
-
+    _safeMint(msg.sender, newItemId);
+    // Set tokenURI
+    _setTokenURI(newItemId, uri);
+    // Update senders total bridged tokens
+    _totalBridgeValue[msg.sender] += bridgeValue_;
     // Return token ID
     return newItemId;
     }
+
+
+    /**
+    * @dev function to get tokenURL here
+    */
+    function tokenURI(uint256 tokenId)
+        public
+        view
+        override(ERC721, ERC721URIStorage)
+        returns (string memory)
+    {
+        return super.tokenURI(tokenId);
+    }
+
 
     /**
     * @dev Burn an existing NFT.
     * @param tokenId The ID of the NFT to burn.
     */
-    function burn(uint256 tokenId) public virtual override onlyOwner {
-    // Delete bridge value
-    delete _bridgeValue[tokenId];
+    function burn(uint256 tokenId) public virtual override {
+        require(_exists(tokenId), "Cross: token does not exist");
+        require(ownerOf(tokenId) == msg.sender, "Cross: caller is not owner of token");
 
-    // Delete rarity and supply
-    uint256 rarity = _rarity[tokenId];
-    delete _rarity[tokenId];
-    _supply[rarity]--;
+        // Burn token
+        _burn(tokenId);
 
-    // Burn token
-    _burn(tokenId);
+        // Emit event
+        emit TokenBurned(tokenId);
     }
 
     /**
@@ -140,7 +163,8 @@ contract Cross is ERC721URIStorage, Ownable, Pausable {
     *  @return The bridge value of the NFT.
     */
         function getBridgeValue(uint256 tokenId) public view returns (uint256) {
-        return _bridgeValue[tokenId];
+        require(_exists(tokenId), "Cross: tokenId does not exist");
+        return tokens[tokenId].bridgeValue;
         }
 
     /**
@@ -148,56 +172,47 @@ contract Cross is ERC721URIStorage, Ownable, Pausable {
     * @param tokenId The ID of the NFT to get the rarity of.
     * @return The rarity of the NFT.
     */
-    function getRarity(uint256 tokenId) public view returns (uint256) {
+    function getRarity(uint256 tokenId) public view returns (string memory) {
         require(_exists(tokenId), "Cross: tokenId does not exist");
-        return _rarity[tokenId];
+        return tokens[tokenId].rarity;
     }
+
 
     /**
-    * @dev Gets the bridge value of a token.
-    * @param tokenId The ID of the token to get the bridge value of.
-    * @return The bridge value of the token.
+    * @dev Sets the base URI for token metadata.
+    * @param baseURI_ The new base URI.
     */
-    function getBridgeValue(uint256 tokenId) external view returns (uint256) {
-        return _bridgeValue[tokenId];
-    }
+        function setBaseTokenURI(string memory baseURI_) public onlyOwner {
+            _baseTokenURI = baseURI_;
+        }
 
-    
-    function setBaseTokenURI(string memory baseURI_) public onlyOwner {
-        _baseTokenURI = baseURI_;
-    }
 
-    function setMaxSupply(uint256 maxSupply_) public onlyOwner {
-        require(maxSupply_ >= _tokenIds.current(), "BridgedNFT: cannot set max supply below current token count");
-        _maxSupply = maxSupply_;
-    }
-
-    function setFeeThreshold(uint256 feeThreshold_) public onlyOwner {
-        require(feeThreshold_ > 0, "BridgedNFT: fee threshold must be greater than zero");
-        _feeThreshold = feeThreshold_;
-    }
-
-    function setFeeExemptionSupply(uint256 feeExemptionSupply_) public onlyOwner {
-        _feeExemptionSupply = feeExemptionSupply_;
-    }
-
-    function setFeeExemptionRarity(uint256 feeExemptionRarity_) public onlyOwner {
-        _feeExemptionRarity = feeExemptionRarity_;
-    }
-
+    /**
+    * @dev Sets the bridge fee for minting a token.
+    * @param bridgeFee_ The new bridge fee.
+    */
     function setBridgeFee(uint256 bridgeFee_) public onlyOwner {
         _bridgeFee = bridgeFee_;
     }
 
+    /**
+    * @dev Withdraws the balance of the contract to the owner.
+    */
     function withdraw() public onlyOwner {
         uint256 balance = address(this).balance;
         payable(msg.sender).transfer(balance);
     }
 
+    /**
+    * @dev Pauses the contract.
+    */
     function pause() public onlyOwner {
         _pause();
     }
 
+    /**
+    * @dev Unpauses the contract.
+    */
     function unpause() public onlyOwner {
         _unpause();
     }

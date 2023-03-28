@@ -1,3 +1,5 @@
+import { useState } from "react";
+import Bridge from "./Bridge";
 import { NFTMetadata } from "./types";
 import { motion } from "framer-motion";
 
@@ -7,6 +9,14 @@ interface Props {
 }
 
 const NFTDetails = ({ nft, onBack }: Props): JSX.Element => {
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [showBridge, setShowBridge] = useState(false);
+
+  const handleMint = () => {
+    setIsLoading(true);
+    setShowBridge(true);
+  };
+
   return (
     <div className="h-screen w-full flex flex-col justify-center items-center">
       <motion.div
@@ -30,9 +40,15 @@ const NFTDetails = ({ nft, onBack }: Props): JSX.Element => {
           <p className="text-sm font-semibold">{`Bridge Value: ${nft.attributes.bridgeValue}`}</p>
           <p className="text-sm font-semibold">{`Rarity: ${nft.attributes.rarityValue}`}</p>
         </div>
-        <button className="w-full bg-green-700 text-white hover:bg-green-600 rounded-lg tracking-widest p-2 my-3 font-bai-jamjuree font-semibold">
+        <button
+          className={`w-full btn bg-green-700 ${
+            isLoading ? "loading" : ""
+          } text-white hover:bg-green-600 rounded-lg border-none tracking-widest p-2 my-3 font-semibold`}
+          onClick={handleMint}
+        >
           MINT
         </button>
+        {showBridge && <Bridge nftPrice={nft.attributes.bridgeValue} />}
       </motion.div>
       <button
         onClick={onBack}
