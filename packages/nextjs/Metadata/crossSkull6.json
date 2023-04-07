@@ -1,0 +1,19 @@
+{
+  "name": "Cross Skull #6",
+  "description": "The sixth skull in the Cross Skull series is a true masterpiece. Its value is among the highest in the series due to its rarity and stunning design. This skull is a true work of art and a testament to the creativity of its designer.",
+  "image": "https://gateway.pinata.cloud/ipfs/QmYTbP4fbo4n8C53Jpspc2xeFGg5d6ZqiLMSc6AMmSryn6",
+  "attributes": [
+    {
+      "trait_type": "Creator",
+      "value": "DanielSheldon.eth"
+    },
+    {
+      "trait_type": "bridgeValue",
+      "value": 5
+    },
+    {
+      "trait_type": "rarity",
+      "value": "Legend"
+    } 
+  ]
+}

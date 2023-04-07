@@ -1,0 +1,19 @@
+{
+  "name": "Cross Skull #1",
+  "description": "This is the first of eighth skulls in the Cross Skull series. It is a classic piece that represents the beginning of a new journey. The skull is beautifully crafted and the perfect addition to any collection.",
+  "image": "https://gateway.pinata.cloud/ipfs/QmdzSsQhBCMaFJVxnTBCtVFAxdF2GB7YbBL9TLZrL71Go5",
+  "attributes": [
+    {
+      "trait_type": "Creator",
+      "value": "DanielSheldon.eth"
+    },
+    {
+      "trait_type": "bridgeValue",
+      "value": 0.03
+    },
+    {
+      "trait_type": "rarity",
+      "value": "Classic"
+    } 
+  ]
+}

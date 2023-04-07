@@ -1,0 +1,19 @@
+{
+  "name": "Cross Skull #5",
+  "description": "TThe fifth skull in the Cross Skull series is a true gem. Its value is skyrocketing due to its rarity and unparalleled beauty. This skull is a statement piece that is sure to turn heads and impress any art enthusiast.",
+  "image": "https://gateway.pinata.cloud/ipfs/QmeDuhSLSXoT1WmawxB5a61g3iY3nLQW8YszVKZ2YW1t7N",
+  "attributes": [
+    {
+      "trait_type": "Creator",
+      "value": "DanielSheldon.eth"
+    },
+    {
+      "trait_type": "bridgeValue",
+      "value": 1.5
+    },
+    {
+      "trait_type": "rarity",
+      "value": "Legend"
+    } 
+  ]
+}

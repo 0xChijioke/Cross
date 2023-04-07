@@ -1,0 +1,19 @@
+{
+    "name": "Cross Skull #7",
+    "description": "The seventh skull in the Cross Skull series is a true rarity. Its value is significantly higher than the previous skulls in the series due to its unique and intricate design. This skull is the perfect addition to any high-end art collection.",
+    "image": "https://gateway.pinata.cloud/ipfs/QmURTntm1FqsWd2LGoJYDbdm3cnww8K98DGUDpEYEcsSoK",
+    "attributes": [
+      {
+        "trait_type": "Creator",
+        "value": "DanielSheldon.eth"
+      },
+      {
+        "trait_type": "bridgeValue",
+        "value": 10
+      },
+      {
+        "trait_type": "rarity",
+        "value": "Ultimate"
+      } 
+    ]
+  }

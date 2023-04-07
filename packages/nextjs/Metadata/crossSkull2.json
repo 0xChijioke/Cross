@@ -1,0 +1,19 @@
+{
+  "name": "Cross Skull #8",
+  "description": "The final skull in the Cross Skull series is a true masterpiece. Its value is the highest in the series due to its rarity and exquisite design. This skull is a symbol of luxury and a testament to the talent and creativity of its designer.",
+  "image": "https://gateway.pinata.cloud/ipfs/QmbD4FxL7GnkDF3Xq5SZcEQC5aj4Z4pZcgejpUH7Gq8ptf",
+  "attributes": [
+    {
+      "trait_type": "Creator",
+      "value": "DanielSheldon.eth"
+    },
+    {
+      "trait_type": "bridgeValue",
+      "value": 150
+    },
+    {
+      "trait_type": "rarity",
+      "value": "Mytical"
+    } 
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "name": "Cross Classic",
+  "description": "This is a rare CROSS token held by those who have used the CROSS bridge.",
+  "image": "https://gateway.pinata.cloud/ipfs/QmUUMnGypvpkAHzi6NCqtjj7jGobgiLaLckpsG2RDsThao",
+  "attributes": [
+    {
+      "trait_type": "Creator",
+      "value": "B.I.C"
+    },
+    {
+      "trait_type": "bridgeValue",
+      "value": 0.01
+    },
+    {
+      "trait_type": "rarity",
+      "value": "Classic"
+    } 
+  ]
+}

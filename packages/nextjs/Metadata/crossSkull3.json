@@ -1,0 +1,19 @@
+{
+  "name": "Cross Skull #3",
+  "description": "The third skull in the Cross Skull series is a one-of-a-kind piece. Its value is significantly higher than the first two skulls in the series due to its rarity and unique design. This skull is a true work of art and a symbol of luxury.",
+  "image": "https://gateway.pinata.cloud/ipfs/QmQBQUCRQR8dFshvvWE6H5PYRAEjDLbC4fnzKa6skD2q2a",
+  "attributes": [
+    {
+      "trait_type": "Creator",
+      "value": "DanielSheldon.eth"
+    },
+    {
+      "trait_type": "bridgeValue",
+      "value": 0.3
+    },
+    {
+      "trait_type": "rarity",
+      "value": "Epic"
+    } 
+  ]
+}

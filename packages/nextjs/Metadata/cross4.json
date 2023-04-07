@@ -1,0 +1,19 @@
+{
+  "name": "George’s dragon",
+  "description": "George’s dragon patrols the borderlands of the civilized world, representing the dangers of perceived outsiders.",
+  "image": "https://gateway.pinata.cloud/ipfs/QmfV4Yd7ks3J885JVaewvBreQ9KAAYdo3jQ86nRi4UcJQ5",
+  "attributes": [
+    {
+      "trait_type": "Creator",
+      "value": "B.I.C"
+    },
+    {
+      "trait_type": "bridgeValue",
+      "value": 100
+    },
+    {
+      "trait_type": "rarity",
+      "value": "Mythical"
+    } 
+  ]
+}

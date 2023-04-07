@@ -1,0 +1,19 @@
+{
+  "name": "Cross Coin #2",
+  "description": "Cross Coin is a rare and mysterious NFT that symbolizes faith and fortune. It is part of the Cross Treasures collection, which features various coins with different meanings and values. Cross Coin is one of the most sought-after NFTs in the collection, as it is believed to bring luck and protection to its owner.",
+  "image": "https://gateway.pinata.cloud/ipfs/QmRRd1wU27xR6HuMyQfixWHQWqFcex1eFduNKuityzLLFy",
+  "attributes": [
+    {
+      "trait_type": "Creator",
+      "value": "B.I.C"
+    },
+    {
+      "trait_type": "bridgeValue",
+      "value": 0.1
+    },
+    {
+      "trait_type": "rarity",
+      "value": "Epic"
+    } 
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "name": "Cross Skull #4",
+  "description": "The fourth skull in the Cross Skull series is a rare find. Its value is increasing steadily as collectors realize its true worth. This skull is perfect for those who appreciate unique and unconventional art pieces.",
+  "image": "https://gateway.pinata.cloud/ipfs/QmckjayJjz83grGdrLPwtKsyQUKk6C9Gr9TSGgRE9Utm7X",
+  "attributes": [
+    {
+      "trait_type": "Creator",
+      "value": "DanielSheldon.eth"
+    },
+    {
+      "trait_type": "bridgeValue",
+      "value": 0.5
+    },
+    {
+      "trait_type": "rarity",
+      "value": "Epic"
+    } 
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "name": "Cross Skull #2",
+  "description": "The second skull in the Cross Skull series is a masterpiece. This skull is rare and its value is increasing with each passing day. Its intricate design and attention to detail make it a must-have for collectors.",
+  "image": "https://gateway.pinata.cloud/ipfs/Qmbq5Cyf8joCjwexi8uUwVuQce1h2CAnBW1W2rcCvNmBAW",
+  "attributes": [
+    {
+      "trait_type": "Creator",
+      "value": "DanielSheldon.eth"
+    },
+    {
+      "trait_type": "bridgeValue",
+      "value": 0.05
+    },
+    {
+      "trait_type": "rarity",
+      "value": "Classic"
+    } 
+  ]
+}
