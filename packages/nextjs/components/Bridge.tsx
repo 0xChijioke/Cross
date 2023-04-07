@@ -1,30 +1,36 @@
 import { useState } from "react";
+import { Spinner } from "./Spinner";
 import { config } from "./config";
 import * as optimismSDK from "@eth-optimism/sdk";
-import { motion } from "framer-motion";
+import { ethers } from "ethers";
 import { toast } from "react-hot-toast";
-import { useAccount, useNetwork } from "wagmi";
+import { useAccount, useNetwork, useSigner } from "wagmi";
+import { useScaffoldContractWrite } from "~~/hooks/scaffold-eth";
 
 interface BridgeProps {
   nftPrice: number;
+  uri: string;
 }
 
-const gwei = BigInt(1e9);
-// const eth: bigint = gwei * gwei;   // 10^18
-// const centieth = eth / BigInt(100);
-
 const Bridge = (props: BridgeProps) => {
-  const { nftPrice } = props;
-  const amount = BigInt(nftPrice) * gwei;
-  const [bridgeTxHash, setBridgeTxHash] = useState<string>("");
+  const { nftPrice, uri } = props;
+  const amount = ethers.utils.parseEther(nftPrice.toString());
+  const feeFromAmt = amount.div(20); // 5% fee
+  const fee = ethers.utils.formatEther(feeFromAmt);
+  const { writeAsync, isLoading, isSuccess } = useScaffoldContractWrite("Cross", "mint", [amount, uri], fee.toString());
+
   const [bridgingInProgress, setBridgingInProgress] = useState<boolean>(false);
   const [bridgingSuccess, setBridgingSuccess] = useState<boolean>(false);
   const [bridgingStatus, setBridgingStatus] = useState<string>("");
-  const [bridgingProgress, setBridgingProgress] = useState<number>(0);
-  const [bridgingTimeTaken, setBridgingTimeTaken] = useState<number>();
   const { chain } = useNetwork();
   const { address } = useAccount();
-  // const { data: signer } = useSigner();
+  const { data: signer } = useSigner();
+
+  const resetState = () => {
+    setBridgingInProgress(false);
+    setBridgingSuccess(false);
+    setBridgingStatus("");
+  };
 
   const handleBridging = async () => {
     const { crossChainMessenger } = config(chain, address);
@@ -35,125 +41,105 @@ const Bridge = (props: BridgeProps) => {
       if (chain?.id === 5) {
         setBridgingStatus("Depositing asset on Ethereum...");
 
-        setBridgingProgress(20);
-        const response = await crossChainMessenger.depositETH(Number(amount));
-        setBridgeTxHash(response.hash);
+        if (!signer) {
+          return null;
+        }
+        const response = await crossChainMessenger.depositETH(amount, { signer });
 
         setBridgingStatus("Waiting for transaction to be confirmed on Ethereum...");
         await response.wait();
-        setBridgingProgress(50);
 
         setBridgingStatus("Waiting for transaction to be relayed to Optimism...");
-        setBridgingProgress(80);
         await crossChainMessenger.waitForMessageStatus(response.hash, optimismSDK.MessageStatus.RELAYED);
-        setBridgingProgress(100);
-        console.log(`depositETH took ${(new Date().getTime() - start.getTime()) / 1000} seconds\n\n`);
-
-        setBridgingStatus("Bridging successful!");
+        const end = new Date();
+        const diff = end.getTime() - start.getTime();
         setBridgingSuccess(true);
+
+        setBridgingStatus(`Bridging successful in ${diff / 1000} seconds.`);
       } else if (chain?.id === 420) {
-        setBridgingProgress(20);
         setBridgingStatus("Withdrawing asset from Optimism...");
 
-        const response = await crossChainMessenger.withdrawETH(Number(amount));
-        setBridgeTxHash(response.hash);
-        setBridgingProgress(50);
+        if (!signer) {
+          return null;
+        }
+
+        const response = await crossChainMessenger.withdrawETH(amount, { signer });
 
         setBridgingStatus("Waiting for transaction to be confirmed on Optimism...");
         await response.wait();
-        setBridgingProgress(70);
 
         setBridgingStatus("Proving message on Ethereum...");
         await crossChainMessenger.proveMessage(response.hash);
 
         setBridgingStatus("Waiting for message to be relayed to Optimism...");
         await crossChainMessenger.waitForMessageStatus(response.hash, optimismSDK.MessageStatus.READY_FOR_RELAY);
-        setBridgingProgress(90);
 
         setBridgingStatus("Finalizing message on Optimism...");
         await crossChainMessenger.finalizeMessage(response.hash);
         const end = new Date();
-        setBridgingProgress(100);
-        console.log(`withdrawETH took ${(new Date().getTime() - start.getTime()) / 1000} seconds\n\n`);
-        // Capture gas used and time taken after bridging completes
-        const timeTaken = (end.getTime() - start.getTime()) / 1000;
-        setBridgingTimeTaken(timeTaken);
-
-        setBridgingStatus("Bridging successful!");
+        const diff = end.getTime() - start.getTime();
         setBridgingSuccess(true);
+
+        setBridgingStatus(`Bridging successful in ${diff / 1000} seconds.`);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
+      setBridgingStatus(`Error bridging: ${error.message}`);
       toast.error("An error occurred while bridging.");
     } finally {
       setBridgingInProgress(false);
+      // setTimeout(() => afterBridge(), 20000);
     }
   };
 
-  return (
-    <div className="flex flex-col items-center justify-center">
-      <div className="fixed inset-0 z-50 flex items-center justify-center">
-        <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
-        <motion.div
-          initial={{ y: "-100vh" }}
-          animate={{ y: "0" }}
-          className="relative z-50 px-8 py-6 bg-white rounded-lg shadow-lg"
-        >
-          <h2 className="mb-4 font-bold text-xl text-gray-800">Bridge</h2>
-          <button
-            className="px-4 py-2 font-bold text-white bg-blue-500 rounded-md shadow-lg focus:outline-none hover:bg-blue-600 active:bg-blue-700"
-            onClick={() => handleBridging()}
-          >
-            Bridge
-          </button>
-          <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: `${bridgingProgress}%` }}
-            style={{ height: 10, backgroundColor: "blue" }}
-            className="mb-4 rounded-full"
-          />
-        </motion.div>
-      </div>
+  {
+    isSuccess && (() => resetState());
+  }
 
+  return (
+    <div className="flex flex-col justify-center w-full items-center space-y-4">
       {bridgingInProgress && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
-          <motion.div
-            initial={{ y: "-100vh" }}
-            animate={{ y: "0" }}
-            className="relative z-50 px-8 py-6 bg-white rounded-lg shadow-lg"
-          >
-            <h2 className="mb-4 font-bold text-xl text-gray-800">Bridging in progress</h2>
-            <p className="mb-4 text-gray-700">Status: {bridgingStatus}</p>
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${bridgingProgress}%` }}
-              style={{ height: 10, backgroundColor: "blue" }}
-              className="mb-4 rounded-full"
-            />
-          </motion.div>
+        <div className="flex flex-col items-center justify-center">
+          <p className="dot tracking-widest ">Bridge Crossing...</p>
+          <Spinner />
         </div>
       )}
-      {/* Success modal */}
-      {bridgingSuccess && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
-          <motion.div
-            initial={{ y: "-100vh" }}
-            animate={{ y: "0" }}
-            className="relative z-50 px-8 py-6 bg-white rounded-lg shadow-lg"
+
+      {!bridgingSuccess && !bridgingInProgress && (
+        <div className="w-full justify-center flex">
+          <button
+            className="rounded-lg p-2 my-7 px-4 bg-green-700 hover:bg-green-600 text-white uppercase tracking-widest"
+            onClick={() => handleBridging()}
           >
-            <h2 className="mb-4 font-bold text-xl text-gray-800">Bridging successful</h2>
-            <p className="mb-4 text-gray-700">Message hash: {bridgeTxHash}</p>
-            <p className="mb-4 text-gray-700">Time taken: {bridgingTimeTaken} seconds</p>
-            <button
-              className="px-4 py-2 font-bold text-white bg-green-500 rounded-md shadow-lg focus:outline-none hover:bg-green-600 active:bg-green-700"
-              onClick={() => setBridgingSuccess(false)}
-            >
-              Close
-            </button>
-          </motion.div>
+            Bridge Now
+          </button>
         </div>
+      )}
+
+      {bridgingSuccess && (
+        <div className="w-full flex justify-center flex-col text-center">
+          <p className="uppercase tracking-wider">Bridging successful!</p>
+          <p>{bridgingStatus}</p>
+          <p>We will charge 5% of the token bridge value to mint you this token.</p>
+
+          {!isLoading && !isSuccess && (
+            <button
+              className="rounded-lg p-2 my-7 px-4 bg-green-700 hover:bg-green-600 text-white uppercase tracking-widest"
+              onClick={writeAsync}
+            >
+              Continue
+            </button>
+          )}
+        </div>
+      )}
+
+      {isLoading && (
+        <div className="flex justify-center">
+          <Spinner />
+        </div>
+      )}
+      {!bridgingSuccess && bridgingStatus && (
+        <p className="tracking-wider flex justify-center text-center text-lg">{bridgingStatus}</p>
       )}
     </div>
   );

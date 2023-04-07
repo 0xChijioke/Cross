@@ -32,14 +32,14 @@ p {
 }
 
 /* This move the card on Y on hover */
-/* 
-.nft-card {
+
+.nft-cardd {
   transition: all 0.3s ease-in-out;
 }
 
-.nft-card:hover {
-  transform: translateY(-10px);
-} */
+.nft-cardd:hover {
+  transform: translateY(-20px);
+}
 
 
 /* This flips the card left to right */
@@ -107,5 +107,18 @@ p {
   100% {
     opacity: 1;
     transform: translate(-50%, -50%);
+  }
+}
+
+
+
+
+.dot {
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0.5;
   }
 }

@@ -2,7 +2,8 @@ import React, { useCallback, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { Bars3Icon, BugAntIcon, SparklesIcon } from "@heroicons/react/24/outline";
+import Cross from "../Assets/cross.png";
+import { Bars3Icon, SparklesIcon } from "@heroicons/react/24/outline";
 import { FaucetButton, RainbowKitCustomConnectButton } from "~~/components/scaffold-eth";
 import { useOutsideClick } from "~~/hooks/scaffold-eth";
 
@@ -39,16 +40,16 @@ export const Header = () => {
       <li>
         <NavLink href="/">Home</NavLink>
       </li>
-      <li>
+      {/* <li>
         <NavLink href="/debug">
           <BugAntIcon className="h-4 w-4" />
           Debug Contracts
         </NavLink>
-      </li>
+      </li> */}
       <li>
-        <NavLink href="/example-ui">
+        <NavLink href="/tokens">
           <SparklesIcon className="h-4 w-4" />
-          Example UI
+          Tokens
         </NavLink>
       </li>
     </>
@@ -80,11 +81,11 @@ export const Header = () => {
         </div>
         <div className="hidden lg:flex items-center gap-2 ml-4 mr-6">
           <Link href="/" passHref className="flex relative w-10 h-10">
-            <Image alt="SE2 logo" className="cursor-pointer" fill src="/logo.svg" />
+            <Image alt="Cross logo" className="cursor-pointer" fill src={Cross} />
           </Link>
           <div className="flex flex-col">
             <span className="font-bold leading-tight">Cross</span>
-            <span className="text-xs">Briding assets</span>
+            <span className="text-xs">Bridging assets</span>
           </div>
         </div>
         <ul className="hidden lg:flex lg:flex-nowrap menu menu-horizontal px-1 gap-2">{navLinks}</ul>

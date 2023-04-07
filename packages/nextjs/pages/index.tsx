@@ -1,9 +1,6 @@
 import Head from "next/head";
 import type { NextPage } from "next";
-// import { BugAntIcon, SparklesIcon } from "@heroicons/react/24/outline";
 import CrossNFTs from "~~/components/CrossNFTs";
-
-// import Hero from "~~/components/Hero";
 
 const Home: NextPage = () => {
   return (
@@ -13,8 +10,7 @@ const Home: NextPage = () => {
         <meta name="description" content="Created with 🏗 scaffold-eth" />
       </Head>
 
-      <div className="flex items-center flex-col flex-grow pt-10">
-        {/* <Hero /> */}
+      <div className="flex items-center flex-col min-h-screen my-10 flex-grow pt-10">
         <CrossNFTs />
       </div>
     </>
