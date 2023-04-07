@@ -4,8 +4,6 @@ import NFTDetails from "./NFTDetails";
 import { Spinner } from "./Spinner";
 import { NFTMetadata } from "./types";
 
-// import Hero from "./Hero";
-
 const pinataBaseURI = "https://gateway.pinata.cloud/ipfs/";
 
 const CrossNFTs = (): JSX.Element => {
